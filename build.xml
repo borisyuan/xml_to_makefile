@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<buildDescription>
+	<buildSpace>mcu_projects</buildSpace>
+	<spacePath>../../../</spacePath>
+	<projectComment>GNU MCU Eclipse Project</projectComment>
+	<projects BuildInPath='BuildingInSpace'>
+		<buildTarget>stm32f407_test</buildTarget>
+		<buildTarget>stm32f407_proj</buildTarget>
+	</projects>
+</buildDescription>
