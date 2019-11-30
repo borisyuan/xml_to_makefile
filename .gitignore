@@ -1,0 +1,4 @@
+*.swp
+build/
+testAPI/
+__pycache__/
