@@ -39,7 +39,7 @@ def listfile(flistre):
     Handler = CfileHandler(flist)
     parser.setContentHandler(Handler)
     parser.parse(".project")
-    flistre = flistre.extend(flist)
+    flistre.extend(flist)
 
 class BuildHandler(xml.sax.ContentHandler):
     def __init__(self, buildlist):
@@ -63,6 +63,7 @@ class BuildHandler(xml.sax.ContentHandler):
             if self.projectComment == "GNU MCU Eclipse Project" :
                 buildlist.append(self.spacePath)
                 buildlist.append(self.buildSpace)
+                buildlist.append(self.projectComment)
             else :
                 print("Only support the GNU MCU Eclipse Project!")
                 print(self.projectComment, "parser is NOT ready now.")
@@ -82,10 +83,11 @@ def listbuild(build):
     Handler = BuildHandler(buildlist)
     parser.setContentHandler(Handler)
     parser.parse("build.xml")
-    build = build.extend(buildlist)
+    build.extend(buildlist)
 
 class TargetHandler(xml.sax.ContentHandler):
     def __init__(self, targetlist):
+        self.CurrentData = ""
         self.buildTarget = ""
 
     def startElement(self, tag, attributes):
@@ -110,4 +112,4 @@ def listproject(projects):
     Handler = TargetHandler(targetlist)
     parser.setContentHandler(Handler)
     parser.parse("build.xml")
-    projects = projects.extend(targetlist)
+    projects.extend(targetlist)
