@@ -102,6 +102,14 @@ def check_project(buildscript, files, projscript):
                 
     return True 
 
+def check_cfiles(filescript):
+    if not os.path.isfile(filescript[0]):
+        print("need a file path:", filescript[0])
+        return False
+    #get filelist and check existed
+    projectparser.listfile(filescript)
+    print(filescript)
+
 def main(argv):
     buildscript = []
     files = []
@@ -120,7 +128,22 @@ def main(argv):
     print("step 1: finding the projects space and target ......")
 
     check_project(buildscript, files, projscript)
-    print(projscript)
+    proj_num = int((len(projscript) - 1) / 2)
+    print("find",proj_num,"projects:",projscript)
+    size_proj = 2
+    for i in range(0,proj_num):
+        filescript = []
+        makescript = []
+        #n = (i * size_proj) + 1
+        m = (i * size_proj) + 2
+        filescript.append(os.path.join(projscript[m], files[0]))
+        makescript.append(os.path.join(projscript[m], files[1]))
+        print(makescript)
+        print(files)
+        print("parse project",i + 1, filescript, makescript)
+        check_cfiles(filescript)
+        #generate_makefile()
+
 
 if __name__ == '__main__':
     main(sys.argv)

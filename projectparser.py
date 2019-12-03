@@ -31,15 +31,15 @@ class CfileHandler(xml.sax.ContentHandler):
             self.type = content
         if self.CurrentData == "locationURI":
             self.locationURI = content
-def listfile(flistre):
+def listfile(filescript):
     parser = xml.sax.make_parser()
     parser.setFeature(xml.sax.handler.feature_namespaces, 0)
     global flist
     flist = []
     Handler = CfileHandler(flist)
     parser.setContentHandler(Handler)
-    parser.parse(".project")
-    flistre.extend(flist)
+    parser.parse(filescript[0])
+    filescript.extend(flist)
 
 class BuildHandler(xml.sax.ContentHandler):
     def __init__(self, buildlist):
