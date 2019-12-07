@@ -3,6 +3,47 @@
 
 import xml.sax
 
+class MakeParaHandler(xml.sax.ContentHandler):
+    def __init__(self, paralist):
+        self.CurrentData = ""
+        self.listOptionValue = ""
+
+    def startElement(self, tag, attributes):
+        self.CurrentData = tag
+        if tag == "configuration" and attributes.__contains__('name'):
+            if attributes['name'] == "Debug" or attributes['name'] == "Release":
+                paralist.append(attributes['name'])
+        if (tag == "toolChain" or tag == "tool") and attributes.__contains__('name'):
+            paralist.append(attributes['name'])
+        if tag == "option":
+            if attributes.__contains__('name'):
+            #if attributes['name'] == "Include paths (-I)" or attributes == "Defined symbols (-D)":
+                paralist.append(attributes['name'])
+            if attributes.__contains__('value') and attributes.__contains__('valueType'):
+                paralist.append(attributes['valueType'])
+                paralist.append(attributes['value'])
+        if tag == "listOptionValue" and attributes.__contains__('value'):
+            print(attributes['value'])
+            paralist.append(attributes['value'])
+
+    def endElement(self, tag):
+        self.CurrentData = ""
+
+    def characters(self, content):
+        if self.CurrentData == "liastOptionValue":
+            self.listOptionValue = content
+
+def listpara(parascript):
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_namespaces, 0)
+    global paralist
+    paralist = []
+    Handler = MakeParaHandler(paralist)
+    parser.setContentHandler(Handler)
+    parser.parse(parascript[0])
+    parascript.extend(paralist)
+
+
 class CfileHandler(xml.sax.ContentHandler):
     def __init__(self, flist):
         self.CurrentData = ""

@@ -109,6 +109,16 @@ def check_cfiles(filescript):
     #get filelist and check existed
     projectparser.listfile(filescript)
     print(filescript)
+    for i in range(1, len(filescript)):
+        if os.path.isfile(filescript[i]):
+            return
+        else :
+            strings = filescript[i]
+            listtemp = strings.split('/',2)
+            print(listtemp)
+            return
+    return True
+
 
 def main(argv):
     buildscript = []
@@ -140,8 +150,10 @@ def main(argv):
         makescript.append(os.path.join(projscript[m], files[1]))
         print(makescript)
         print(files)
-        print("parse project",i + 1, filescript, makescript)
+        print("parse project", (i + 1), filescript, makescript)
         check_cfiles(filescript)
+        projectparser.listpara(makescript)
+        print(makescript)
         #generate_makefile()
 
 
