@@ -12,8 +12,10 @@ class MakeParaHandler(xml.sax.ContentHandler):
         self.CurrentData = tag
         if tag == "configuration" and attributes.__contains__('name'):
             if attributes['name'] == "Debug" or attributes['name'] == "Release":
+                paralist.append(tag)
                 paralist.append(attributes['name'])
         if (tag == "toolChain" or tag == "tool") and attributes.__contains__('name'):
+            paralist.append(tag)
             paralist.append(attributes['name'])
         if tag == "option":
             if attributes.__contains__('name'):
@@ -53,15 +55,15 @@ class CfileHandler(xml.sax.ContentHandler):
 
     def startElement(self, tag, attributes):
         self.CurrentData = tag
-        if tag == "link":
-            print ("link:")
+        #if tag == "link":
+            #print ("link:")
     def endElement(self, tag):
-        if self.CurrentData == "name":
-            print ("name:", self.name)
-        if self.CurrentData == "type":
-            print ("type:", self.type)
+        #if self.CurrentData == "name":
+            #print ("name:", self.name)
+        #if self.CurrentData == "type":
+            #print ("type:", self.type)
         if self.CurrentData == "locationURI":
-            print ("locationURI:", self.locationURI)
+            #print ("locationURI:", self.locationURI)
             if self.type == "1" :
                 flist.append(self.locationURI)
         self.CurrentData = ""

@@ -80,9 +80,9 @@ def check_project(buildscript, files, projscript):
     print("find the space dir:", abs_path)
     projectparser.listproject(projects)
     print(projects)
-    projpath = []
-    count = len(projpath)
-    print(count)
+    #projpath = []
+    #count = len(projpath)
+    #print(count)
     if buildscript[0] == 'all':
         for proj in projects :
             if proj == projects[0]:
@@ -94,7 +94,7 @@ def check_project(buildscript, files, projscript):
                 print(proj, "is not existed!")
             else:
                 for path in projpath:
-                    print(":::",path)
+                    print(":::", path, ":::")
                     if check_proj_file(path, files):
                         projscript.append(proj)
                         projscript.append(path)
@@ -102,21 +102,42 @@ def check_project(buildscript, files, projscript):
                 
     return True 
 
-def check_cfiles(filescript):
+def check_target_files(clist, assemble, filescript):
     if not os.path.isfile(filescript[0]):
         print("need a file path:", filescript[0])
         return False
     #get filelist and check existed
     projectparser.listfile(filescript)
     print(filescript)
-    for i in range(1, len(filescript)):
+    for i in range(2, len(filescript)):
         if os.path.isfile(filescript[i]):
-            return
+            clist.append(filescript[i])
         else :
             strings = filescript[i]
-            listtemp = strings.split('/',2)
+            listtemp = strings.split('/',1)
+            pathtemp = os.path.split(filescript[0])
+            print(pathtemp)
             print(listtemp)
-            return
+            if listtemp[0] == "..":
+                filepath = os.path.join(pathtemp[0], filescript[i])
+                if os.path.isfile(filepath):
+                    print(filepath, "existed")
+                    clist.append(filepath)
+            else :
+                symbol = listtemp[0].split('-', 2)
+                print(symbol)
+                if symbol[0] == "PARENT" and symbol[2] == "PROJECT_LOC":
+                    num = int(symbol[1])
+                    filenewpath = pathtemp[0]
+                    for j in range(0, num):
+                        temp = []
+                        temp = os.path.split(filenewpath)
+                        filenewpath = temp[0]
+                    filenewpath = os.path.join(filenewpath, listtemp[1])
+                    print(filenewpath)
+                    if os.path.isfile(filenewpath):
+                        clist.append(filenewpath)
+
     return True
 
 
@@ -144,17 +165,25 @@ def main(argv):
     for i in range(0,proj_num):
         filescript = []
         makescript = []
-        #n = (i * size_proj) + 1
+        n = (i * size_proj) + 1
         m = (i * size_proj) + 2
         filescript.append(os.path.join(projscript[m], files[0]))
+        filescript.append(projscript[0])
         makescript.append(os.path.join(projscript[m], files[1]))
+        makescript.append(projscript[0])
         print(makescript)
         print(files)
         print("parse project", (i + 1), filescript, makescript)
-        check_cfiles(filescript)
+        clist = []
+        inclist = []
+        assemble = []
+        MakePara = {}
+        check_target_files(clist, assemble, filescript)
+        print(clist)
         projectparser.listpara(makescript)
         print(makescript)
-        #generate_makefile()
+        #makepara_parser(MakePara, inclist, makescript)
+        #generate_makefile(MakePara)
 
 
 if __name__ == '__main__':
