@@ -83,11 +83,24 @@ def check_project(buildscript, files, projscript):
     #projpath = []
     #count = len(projpath)
     #print(count)
-    if buildscript[0] == 'all':
-        for proj in projects :
-            if proj == projects[0]:
-                projscript.append(abs_path)
-                continue
+    #the build generate operation need a default or existed dir
+    #do not support to make new dir
+    if not os.path.isdir(projects[0]):
+        build_gen  = os.path.join(abs_path, 'build')
+        print("generate to:", build_gen)
+        buildscript.append(build_gen)
+    else:
+        print("generate to existed dir:", projects[0])
+        buildscript.append(projects[0])
+     
+    for proj in projects :
+        if proj == projects[0]:
+            projscript.append(abs_path)
+            continue
+        SearchStatus = False
+        if buildscript[0] == 'all' or buildscript[0] == proj: 
+            SearchStatus = True
+        if SearchStatus == True:
             projpath = []
             search_target(abs_path, proj, projpath)
             if len(projpath) == 0:
@@ -102,30 +115,37 @@ def check_project(buildscript, files, projscript):
                 
     return True 
 
+def is_target_file(clist, assemble, filename):
+    if os.path.isfile(filename):
+        filetype = os.path.splitext(filename)
+        #print(filetype)
+        if filetype[1] == ".S" or filetype[1] == ".s":
+            assemble.append(filename)
+        else :
+            clist.append(filename)
+        return True
+    else: return False
+
 def check_target_files(clist, assemble, filescript):
     if not os.path.isfile(filescript[0]):
         print("need a file path:", filescript[0])
         return False
     #get filelist and check existed
     projectparser.listfile(filescript)
-    print(filescript)
+    #print(filescript)
     for i in range(2, len(filescript)):
-        if os.path.isfile(filescript[i]):
-            clist.append(filescript[i])
-        else :
+        if not is_target_file(clist, assemble, filescript[i]):
+            #clist.append(filescript[i])
+        #else :
             strings = filescript[i]
             listtemp = strings.split('/',1)
             pathtemp = os.path.split(filescript[0])
-            print(pathtemp)
-            print(listtemp)
             if listtemp[0] == "..":
                 filepath = os.path.join(pathtemp[0], filescript[i])
-                if os.path.isfile(filepath):
-                    print(filepath, "existed")
-                    clist.append(filepath)
+                is_target_file(clist, assemble, filepath)
             else :
                 symbol = listtemp[0].split('-', 2)
-                print(symbol)
+                #print(symbol)
                 if symbol[0] == "PARENT" and symbol[2] == "PROJECT_LOC":
                     num = int(symbol[1])
                     filenewpath = pathtemp[0]
@@ -134,11 +154,19 @@ def check_target_files(clist, assemble, filescript):
                         temp = os.path.split(filenewpath)
                         filenewpath = temp[0]
                     filenewpath = os.path.join(filenewpath, listtemp[1])
-                    print(filenewpath)
-                    if os.path.isfile(filenewpath):
-                        clist.append(filenewpath)
+                    #print(filenewpath)
+                    is_target_file(clist, assemble, filenewpath)
 
     return True
+
+def autogen_makefile(buildscript, makescript, clist, assemble):
+    for i in range(2, len(makescript)):
+        if makescript[i] == "configuration":
+            start_parse = True
+            continue
+        if makescript[i] == "toolChain":
+            break
+    dependencies = '-include $(wildcard $(BUILD_DIR)/*.d)\n'
 
 
 def main(argv):
@@ -158,7 +186,8 @@ def main(argv):
     print("*************************")
     print("step 1: finding the projects space and target ......")
 
-    check_project(buildscript, files, projscript)
+    Status = check_project(buildscript, files, projscript)
+    print("projects status:",Status)
     proj_num = int((len(projscript) - 1) / 2)
     print("find",proj_num,"projects:",projscript)
     size_proj = 2
@@ -171,18 +200,18 @@ def main(argv):
         filescript.append(projscript[0])
         makescript.append(os.path.join(projscript[m], files[1]))
         makescript.append(projscript[0])
-        print(makescript)
-        print(files)
+        #print(makescript)
+        #print(files)
         print("parse project", (i + 1), filescript, makescript)
         clist = []
-        inclist = []
+        #inclist = []
         assemble = []
-        MakePara = {}
+        #MakePara = {}
         check_target_files(clist, assemble, filescript)
-        print(clist)
+        print(clist, "\n", assemble)
         projectparser.listpara(makescript)
         print(makescript)
-        #makepara_parser(MakePara, inclist, makescript)
+        autogen_makefile(buildscript, makescript, clist, assemble)
         #generate_makefile(MakePara)
 
 
