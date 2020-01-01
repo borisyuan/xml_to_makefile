@@ -2,12 +2,92 @@
 #!/usr/bin/python3
 
 import xml.sax
+import os
 
 ParserStatus = False
 ToolchainParse = False
 ToolParse = 'NONE'
-
+ProjDir = ''
+ListOption = ''
 ParaDict = {}
+
+def toollinkerparser(tag, attributes):
+    global ProjDir
+    if tag == "option" and attributes.__contains__('name'):
+        if attributes['name'] == "Script files (-T)":
+            ParaDict['LDSCRIPT'] = "LDSCRIPT = "
+        elif (attributes['name'].find(' (-') > 0) and attributes.__contains__('value') and attributes['value'] == 'true':
+            para = attributes['name'].split('(',1)
+            flag = para[1].replace(')', ' ')
+            if ParaDict.__contains__('LDFLAGS'):
+                ParaDict['LDFLAGS'] += flag
+            else:
+                ParaDict['LDFLAGS'] = "LDFLAGS = " + flag
+        print(ParaDict['LDFLAGS'])
+    elif tag == "listOptionValue" and attributes.__contains__('value'):
+        if os.path.isfile(attributes['value']):
+            ParaDict['LDSCRIPT'] += attributes['value']
+        else:
+            if attributes['value'].startswith('"${ProjDirPath}/'):
+                pathtemp = attributes['value'].replace('"${ProjDirPath}/', '')
+                ldpath = pathtemp.replace('"', '')
+                ldscript = os.path.join(ProjDir, ldpath)
+                ParaDict['LDSCRIPT'] += ldscript
+            else:
+                ldscript = os.path.join(ProjDir, attributes['value'])
+                if os.path.isfile(ldscript):
+                    ParaDict['LDSCRIPT'] += ldscript
+                else:
+                    print("can not find ldscript file!\n path :", attributes['value'])
+        print(ParaDict['LDSCRIPT'])
+def comfirm_includes(includes):
+    global ProjDir
+    print(includes)
+    if os.path.isdir(includes):
+        return includes
+    else:
+        if includes.startswith('"${ProjDirPath}'):
+            # the includes path combine the variable ${ProjDirPath}
+            pathtemp = includes.replace('"${ProjDirPath}/', '')
+            incpath = pathtemp.replace('"', '')
+            #print(incpath)
+            retstr= os.path.join(ProjDir, incpath)
+            print("+ include dir:", retstr)
+            return retstr
+        else:
+            # the path is in the current project dir
+            incpath = os.path.join(ProjDir, includes)
+            if os.path.isdir(incpath):
+                print("+ ~include dir:", incpath)
+                return incpath
+            else:
+                print("Can not parse this include:", includes)
+                return ''
+def toolcompilerparser(tag, attributes):
+    global ParaDict
+    global ListOption
+    if tag == "option" and attributes.__contains__('name'):
+        if (attributes['name'] == "Defined symbols (-D)"):
+            ParaDict['C_DEFS'] = "C_DEFS ="
+            ListOption = 'C_DEFS'
+        elif (attributes['name'] == "Include paths (-I)"):
+            ParaDict['C_INCLUDES'] = "C_INCLUDES ="
+            ListOption = 'C_INCLUDES'
+    elif tag == "listOptionValue" and attributes.__contains__('value'):
+        if ListOption == 'C_DEFS':
+            Defs = " \\\n -D" + attributes['value']
+            ParaDict['C_DEFS'] += Defs
+            print(ParaDict['C_DEFS'])
+        elif ListOption == 'C_INCLUDES':
+            Icludes = " \\\n -I" + comfirm_includes(attributes['value'])
+            ParaDict['C_INCLUDES'] += Icludes
+            print(ParaDict['C_INCLUDES'])
+
+def toolassemblerparser(tag, attributes):
+    global ParaDict
+    if tag == "option" and attributes.__contains__('name'):
+        if (attributes['name'] == "Use preprocessor") and attributes.__contains__('value') and attributes['value'] == 'true':
+            ParaDict['AS_DEFS'] = "AS_DEFS = "
 
 def toolchainparser(tag, attributes):
     global ParaDict
@@ -26,16 +106,7 @@ def toolchainparser(tag, attributes):
             elif attributes['value'].endswith('.optimization.level.debug'):
                 ParaDict['OPT'] = "OPT = -Og"
             print(ParaDict['OPT'])
-        if attributes['name'] == "Message length (-fmessage-length=0)":
-            ParaDict['TOOL_FLAGS'] = "-fmessage-length=0 "
-        if attributes['name'] == "'char' is signed (-fsigned-char)":
-            ParaDict['TOOL_FLAGS'] += "-fsigned-char "
-        if attributes['name'] == "Function sections (-ffunction-sections)":
-            ParaDict['TOOL_FLAGS'] += "-ffunction-sections "
-        if attributes['name'] == "Data sections (-fdata-sections)":
-            ParaDict['TOOL_FLAGS'] += "-fdata-sections "
-            print(ParaDict['TOOL_FLAGS'])
-        if attributes['name'] == "Debug level":
+        elif attributes['name'] == "Debug level":
             if attributes['value'].endswith('.debugging.level.min'):
                 ParaDict['DEBUG_FLAG'] = "CFLAGS += -g1"
             if attributes['value'].endswith('.debugging.level.default'):
@@ -43,53 +114,60 @@ def toolchainparser(tag, attributes):
             if attributes['value'].endswith('.debugging.level.max'):
                 ParaDict['DEBUG_FLAG'] = "CFLAGS += -g3"
         #if attributes['name'] == "Debug format":
-        if attributes['name'] == "Architecture":
+        elif attributes['name'] == "Architecture":
             ParaDict[''] = "MCU = $(CPU) $(THUMB) $(FPU) $(FLOAT-ABI)"
             #if attributes['value'].endswith('.architecture.arm'):
                 #ParaDict[''] = ""
-        if attributes['name'] == "ARM family":
-            if attributes['value'].endswith('.target.mcpu.cortex-m4'):
-                ParaDict['CPU'] = "CPU = -mcpu=cortex-m4"
-        if attributes['name'] == "Instruction set":
+        elif attributes['name'] == "ARM family":
+            #if attributes['value'].endswith('.target.mcpu.cortex-m4'):
+            if  attributes.__contains__('value'):
+                vstr = attributes['value'].split('.')
+                ParaDict['CPU'] = "CPU = -mcpu=" + vstr[len(vstr) - 1]
+                #ParaDict['CPU'] = "CPU = -mcpu=cortex-m4"
+        elif attributes['name'] == "Instruction set":
             if attributes['value'].endswith('.thumb'):
                 ParaDict['THUMB'] = "THUMB = -mthumb "
                 print(ParaDict['THUMB'])
-        if attributes['name'] == "Prefix":
+        elif attributes['name'] == "Prefix":
             #print("PREFIX =",attributes['value'])
             ParaDict['PREFIX'] = "PREFIX = " + attributes['value']
             print(ParaDict['PREFIX'])
-        if attributes['name'] == "C compiler":
+        elif attributes['name'] == "C compiler":
             #print("PREFIX =",attributes['value'])
             ParaDict['CC'] = "CC = $(PREFIX)" + attributes['value']
             ParaDict['AS'] = "AS = $(PREFIX)" + attributes['value'] + " -x assembler-with-cpp"
-            ParaDict['AS_FLAGS'] = "ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) $(TOOL_FLAGS) "
+            ParaDict['ASFLAGS'] = "ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) $(TOOL_FLAGS) "
+            ParaDict['CFLAGS'] = "CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) $(TOOL_FLAGS) "
             print(ParaDict['CC'])
             print(ParaDict['AS'])
-        if attributes['name'] == "Hex/Bin converter":
+        elif attributes['name'] == "Hex/Bin converter":
             #print("PREFIX =",attributes['value'])
             ParaDict['CP'] = "CP = $(PREFIX)" + attributes['value']
             print(ParaDict['CP'])
-        if attributes['name'] == "Size command":
+        elif attributes['name'] == "Size command":
             #print("PREFIX =",attributes['value'])
             ParaDict['SZ'] = "SZ = $(PREFIX)" + attributes['value']
             print(ParaDict['SZ'])
         #if attributes['name'] == "Build command":
         #if attributes['name'] == "Remove command":
-        if attributes['name'] == "Thumb interwork (-mthumb-interwork)":
-            ParaDict['THUMB'] += "-mthumb-interwork"
-            print(ParaDict['THUMB'])
-        if attributes['name'] == "Float ABI":
+        elif attributes['name'] == "Float ABI":
             if attributes['value'].endswith('.fpu.abi.softfp'):
                 ParaDict['FLOAT_ABI'] = "FLOAT_ABI = -mfloat-abi=softfp"
                 print(ParaDict['FLOAT_ABI'])
-        #if attributes['name'] == "FPU Type":
+        elif attributes['name'] == "FPU Type":
             if attributes['value'].endswith('.fpu.unit.fpv4spd16'):
                 ParaDict['FPU'] = "FPU = -mfpu=fpv4-sp-d16"
                 print(ParaDict['FPU'])
-        if attributes['name'] == "Warn if floats are compared as equal (-Wfloat-equal)":
-            ParaDict['TOOL_FLAGS'] += "-Wfloat-equal "
-        if attributes['name'] == "Warn if struct is returned (-Wagreggate-return)":
-            ParaDict['TOOL_FLAGS'] += "-Wagreggate-return "
+        elif (attributes['name'].find(' (-') > 0) and attributes.__contains__('value') and attributes['value'] == 'true':
+            para = attributes['name'].split('(',1)
+            flag = para[1].replace(')', ' ')
+            if flag.find('thumb') > 0:
+                if ParaDict.__contains__('THUMB'): ParaDict['THUMB'] += flag
+                print(ParaDict['THUMB'])
+            else:
+                if ParaDict.__contains__('TOOL_FLAGS'): ParaDict['TOOL_FLAGS'] += flag
+                else: ParaDict['TOOL_FLAGS'] = "TOOL_FLAGS = " + flag
+            print(ParaDict['TOOL_FLAGS'])
 
 def buidsettinggenerate(tag, attributes):
     global ParaDict
@@ -98,15 +176,17 @@ def buidsettinggenerate(tag, attributes):
     if ToolParse == "NONE":
         if ToolchainParse == True:
             toolchainparser(tag, attributes)
-    #elif ToolParse == "GNU ARM Cross Assembler":
-        #toolassemblerparse(tag, attributes)
-    #elif ToolParse == "GNU ARM Cross C Compiler":
-        #toolcompilerparse(tag, attributes)
+    elif ToolParse == "GNU ARM Cross Assembler":
+        toolassemblerparser(tag, attributes)
+    elif ToolParse == "GNU ARM Cross C Compiler":
+        toolcompilerparser(tag, attributes)
     elif ToolParse == "GNU ARM Cross C++ Compiler":
-        print("No C++ parse by default!")
-        #toolcompilerparse(tag, attributes)
-    #elif ToolParse == "GNU ARM Cross C Linker" or ToolParse == "GNU ARM Cross C++ Linker" :
-        #toollinkerparse(tag, attributes)
+        print("No C++ compiler parser by default!")
+        #toolcompilerparser(tag, attributes)
+    elif ToolParse == "GNU ARM Cross C++ Linker" :
+        print("No C++ Linker parser by default!")
+    elif ToolParse == "GNU ARM Cross C Linker":
+        toollinkerparser(tag, attributes)
     #else:
         #toolparaparse(tag, attributes)
 
@@ -125,28 +205,28 @@ class MakeParaHandler(xml.sax.ContentHandler):
             if attributes['name'] == "Debug" :
                 ParserStatus = True
                 print(ToolParse, ParserStatus)
-                paralist.append(tag)
-                paralist.append(attributes['name'])
+                #paralist.append(tag)
+                #paralist.append(attributes['name'])
             elif attributes['name'] == "Release":
                 ParserStatus = False
-        if tag == "toolChain" and attributes.__contains__('name'):
+        elif tag == "toolChain" and attributes.__contains__('name'):
             ToolchainParse = True
-            paralist.append(tag)
-            paralist.append(attributes['name'])
-        if tag == "tool" and attributes.__contains__('name'):
+            #paralist.append(tag)
+            #paralist.append(attributes['name'])
+        elif tag == "tool" and attributes.__contains__('name'):
             ToolParse = attributes['name']
             print(ToolParse)
-        if tag == "option":
-            if attributes.__contains__('name'):
-            #if attributes['name'] == "Include paths (-I)" or attributes == "Defined symbols (-D)":
-                paralist.append(attributes['name'])
-                print(attributes['name'])
-            if attributes.__contains__('value') and attributes.__contains__('valueType'):
-                paralist.append(attributes['valueType'])
-                paralist.append(attributes['value'])
-        if tag == "listOptionValue" and attributes.__contains__('value'):
-            #print(attributes['value'])
-            paralist.append(attributes['value'])
+        #if tag == "option":
+        #    if attributes.__contains__('name'):
+        #    #if attributes['name'] == "Include paths (-I)" or attributes == "Defined symbols (-D)":
+        #        paralist.append(attributes['name'])
+        #        print(attributes['name'])
+        #    if attributes.__contains__('value') and attributes.__contains__('valueType'):
+        #        paralist.append(attributes['valueType'])
+        #        paralist.append(attributes['value'])
+        #if tag == "listOptionValue" and attributes.__contains__('value'):
+        #    #print(attributes['value'])
+        #    paralist.append(attributes['value'])
 
     def endElement(self, tag):
         self.CurrentData = ""
@@ -156,6 +236,13 @@ class MakeParaHandler(xml.sax.ContentHandler):
             self.listOptionValue = content
 
 def listpara(parascript):
+    global ProjDir
+    global ParaDict
+    ProjDir = os.path.dirname(parascript[0])
+    print("Project Dir:", ProjDir)
+    temp = os.path.split(ProjDir)
+    ParaDict['TARGET'] = "TARGET = " + temp[1]
+    print(ParaDict['TARGET'])
     parser = xml.sax.make_parser()
     parser.setFeature(xml.sax.handler.feature_namespaces, 0)
     global paralist
@@ -164,6 +251,8 @@ def listpara(parascript):
     parser.setContentHandler(Handler)
     parser.parse(parascript[0])
     parascript.extend(paralist)
+    print(ParaDict.values())
+    return ParaDict
 
 
 class CfileHandler(xml.sax.ContentHandler):

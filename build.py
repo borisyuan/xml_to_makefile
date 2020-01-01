@@ -159,8 +159,8 @@ def check_target_files(clist, assemble, filescript):
 
     return True
 
-def autogen_makefile(buildscript, makescript, clist, assemble):
-    for i in range(2, len(makescript)):
+def autogen_makefile(buildscript, MakePara, clist, assemble):
+    for i in range(2, len(buildscript)):
         if makescript[i] == "configuration":
             start_parse = True
             continue
@@ -168,6 +168,13 @@ def autogen_makefile(buildscript, makescript, clist, assemble):
             break
     dependencies = '-include $(wildcard $(BUILD_DIR)/*.d)\n'
 
+def sysargv_parser(sysargv):
+    if len(sysargv) < 2:
+        BuildPara['BUILD_TARGET'] = "all"
+    else:
+        for i in rang(1, len(sysargv)):
+            if syargv[i] == "-h":
+                return
 
 def main(argv):
     buildscript = []
@@ -206,11 +213,13 @@ def main(argv):
         clist = []
         #inclist = []
         assemble = []
-        #MakePara = {}
+        MakePara = {}
         check_target_files(clist, assemble, filescript)
         print(clist, "\n", assemble)
-        projectparser.listpara(makescript)
+        MakePara = projectparser.listpara(makescript)
         print(makescript)
+        print(MakePara)
+        print(buildscript)
         autogen_makefile(buildscript, makescript, clist, assemble)
         #generate_makefile(MakePara)
 
