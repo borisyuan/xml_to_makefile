@@ -22,7 +22,7 @@ def toollinkerparser(tag, attributes):
             if ParaDict.__contains__('LDFLAGS'):
                 ParaDict['LDFLAGS'] += flag
             else:
-                ParaDict['LDFLAGS'] = "LDFLAGS = $(MCU) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref " + flag
+                ParaDict['LDFLAGS'] = "LDFLAGS = $(MCU) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map " + flag
         print(ParaDict['LDFLAGS'])
     elif tag == "listOptionValue" and attributes.__contains__('value'):
         if os.path.isfile(attributes['value']):
@@ -116,7 +116,7 @@ def toolchainparser(tag, attributes):
                 ParaDict['DEBUG_FLAG'] = "CFLAGS += -g3"
         #if attributes['name'] == "Debug format":
         elif attributes['name'] == "Architecture":
-            ParaDict['MCU'] = "MCU = $(CPU) $(THUMB) $(FPU) $(FLOAT-ABI)"
+            ParaDict['MCU'] = "MCU = $(CPU) $(THUMB) $(FPU) $(FLOAT_ABI)"
             #if attributes['value'].endswith('.architecture.arm'):
                 #ParaDict[''] = ""
         elif attributes['name'] == "ARM family":

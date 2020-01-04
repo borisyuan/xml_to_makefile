@@ -203,7 +203,7 @@ def autogen_makefile(buildscript, MakePara, clist, assemble):
     fd.write(MakePara['CP'] + "\n")
     fd.write(MakePara['SZ'] + "\n")
     fd.write("endif\n\n")
-    fd.write("HEX = $(CP) -O -ihex\n")
+    fd.write("HEX = $(CP) -O ihex\n")
     fd.write("BIN = $(CP) -O binary -S\n\n")
     fd.write(MakePara['THUMB'] + "\n")
     fd.write(MakePara['CPU'] + "\n")
