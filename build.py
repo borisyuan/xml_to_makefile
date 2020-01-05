@@ -3,10 +3,12 @@
 
 import os, sys, projectparser
 
-def search_target(startpath, target, targetpath):
+targetpath = []
+def search_target(startpath, target):
+    global targetpath
     if not os.path.isdir(startpath) :
         print('invalid startpath:', startpath)
-        return False
+        return targetpath
 
     listsubdir =  os.listdir(startpath)
 
@@ -19,9 +21,9 @@ def search_target(startpath, target, targetpath):
         subdirpath = os.path.join(startpath, subdir)
         if os.path.isdir(subdirpath) :
             #print(subdirpath)
-            search_target(subdirpath, target, targetpath)
+            search_target(subdirpath, target)
 
-    return True
+    return targetpath
 
 def is_file_existed(path, filename):
     if not os.path.isdir(path) :
@@ -51,69 +53,130 @@ def check_proj_file(path, files):
     else :
         return False
 
-def check_project(buildscript, files, projscript):
-    if len(buildscript) < 1:
-        print("Not any build info!")
-        return False
+def check_project(buildscript):
+    BuildParaDict = {}
+    if len(buildscript) > 0:
+        BuildParaDict['BUILD_TARGET'] = buildscript
+    else:
+        BuildParaDict['BUILD_TARGET'] = "all"
+    BuildParaDict['PROJ_NUM'] = 0
+        
     build = []
     projects = []
+    files = []
     projectparser.listbuild(build)
-    #print(build)
-    if len(build) < 3:
+    print(build)
+    if len(build) < 4:
         print("Get build info failed!")
-        return False
+        return BuildParaDict
+
     if build[2] == "GNU MCU Eclipse Project":
         files.append('.project')
         files.append('.cproject')
+        BuildParaDict['GMEP'] = ".project"
+        BuildParaDict['GMEP_'] = ".cproject"
     else:
         print("Not support!")
-        return False
+        return BuildParaDict
 
     space = os.path.join(build[0], build[1])
-    abs_path = os.path.abspath(space)
+    #abs_path = os.path.abspath(space)
     #print(abs_path)
     #print(os.path.isdir(abs_path))
-    if not os.path.isdir(abs_path):
-        print("Space dir can not find")
-        return False
-
-    print("find the space dir:", abs_path)
-    projectparser.listproject(projects)
-    print(projects)
-    #projpath = []
-    #count = len(projpath)
-    #print(count)
-    #the build generate operation need a default or existed dir
-    #do not support to make new dir
-    if not os.path.isdir(projects[0]):
-        build_gen  = os.path.join(abs_path, 'build')
-        print("generate to:", build_gen)
-        buildscript.append(build_gen)
+    if os.path.isdir(space):
+        abs_path = os.path.abspath(space)
+        BuildParaDict['BUILD_SPACE'] = abs_path
     else:
-        print("generate to existed dir:", projects[0])
-        buildscript.append(projects[0])
+        print("Build space can not find!")
+        return BuildParaDict
+
+    print("find the build space:", abs_path)
+
+    #the build generate operation need a default or existed dir
+    if os.path.isdir(build[3]):
+        print("generate to existed dir:", build[3])
+        BuildParaDict['BUILD_TO'] = build[3]
+    else:
+        if build[3].startswith('BUILD_SPACE_DEFAULT/'):
+            BuildTo = os.path.join(abs_path, build[3].replace('BUILD_SPACE_DEFAULT/', ''))
+        else:
+            BuildTo = os.path.join(abs_path, 'build')
+        print("generate to:", BuildTo)
+        BuildParaDict['BUILD_TO'] = BuildTo
      
-    for proj in projects :
-        if proj == projects[0]:
-            projscript.append(abs_path)
-            continue
-        SearchStatus = False
-        if buildscript[0] == 'all' or buildscript[0] == proj: 
-            SearchStatus = True
-        if SearchStatus == True:
-            projpath = []
-            search_target(abs_path, proj, projpath)
-            if len(projpath) == 0:
-                print(proj, "is not existed!")
+    if len(build) > 4:
+        print("check target path:", build[4])
+        if os.path.isdir(build[4]):
+            print("target:",os.listdir(build[4]))
+            BuildParaDict['PROJ_PATH'] = build[4]
+            TargetList = os.listdir(build[4])
+        else:
+            if build[4].startswith('BUILD_SPACE_DEFAULT/'):
+                TargetPath = os.path.join(abs_path, build[4].replace('BUILD_SPACE_DEFAULT/', ''))
+                BuildParaDict['PROJ_PATH'] = TargetPath
+                print("target:",os.listdir(TargetPath))
+                TargetList = os.listdir(TargetPath)
             else:
-                for path in projpath:
-                    print(":::", path, ":::")
-                    if check_proj_file(path, files):
-                        projscript.append(proj)
-                        projscript.append(path)
-                        print(proj,path)
-                
-    return True 
+                TargetList = []
+    if len(TargetList) > 0:
+        for target in TargetList:
+            if not target.startswith('.'):
+                if BuildParaDict['BUILD_TARGET'] == "all":
+                    projects.append(target)
+                    BuildParaDict['PROJ_NUM'] += 1
+                elif BuildParaDict['BUILD_TARGET'] == target:
+                    projects.append(target)
+                    BuildParaDict['PROJ_NUM'] += 1
+                    break
+    else:
+        temp = []
+        projectparser.listproject(temp)
+        temp = []
+        if len(temp) < 1:
+            print("Can not find proj info!")
+        else:
+            for proj in temp:
+                if BuildParaDict['BUILD_TARGET'] == "all":
+                    projects.append(proj)
+                    BuildParaDict['PROJ_NUM'] += 1
+                elif BuildParaDict['BUILD_TARGET'] == target:
+                    projects.append(proj)
+                    BuildParaDict['PROJ_NUM'] += 1
+                    break
+
+    if len(projects) < 1:
+        print("NO project info!")
+        return BuildParaDict
+
+    print("project:", BuildParaDict['PROJ_NUM'], projects)
+
+    SearchCounter = 0
+    for i in range(0, BuildParaDict['PROJ_NUM']):
+        if BuildParaDict.__contains__('PROJ_PATH'): 
+            SearchPath = BuildParaDict['PROJ_PATH']
+        else:
+            SearchPath = abs_path
+        projpath = search_target(SearchPath, projects[i])
+        if len(projpath) < 1:
+            BuildParaDict['PROJ_PATH'] = ""
+            print(projects[i], "is not existed!")
+        else:
+            for path in projpath:
+                print(":::", path, ":::")
+                if check_proj_file(path, files):
+                    #projscript.append(proj)
+                    #projscript.append(path)
+                    SearchCounter += 1
+                    if BuildParaDict.__contains__('PROJ_NAME'):BuildParaDict['PROJ_NAME'] += ('&&' + projects[i])
+                    else: BuildParaDict['PROJ_NAME'] = projects[i]
+                    if BuildParaDict.__contains__('PROJ_PATH'):
+                        if SearchCounter > 1:BuildParaDict['PROJ_PATH'] += ('&&' + path)
+                        else:BuildParaDict['PROJ_PATH'] = path
+                    else:
+                        BuildParaDict['PROJ_PATH'] = path
+    BuildParaDict['PROJ_NUM'] = SearchCounter
+    print(BuildParaDict['PROJ_NAME'],BuildParaDict['PROJ_PATH']) 
+    return BuildParaDict 
 
 def is_target_file(clist, assemble, filename):
     if os.path.isfile(filename):
@@ -133,7 +196,7 @@ def check_target_files(clist, assemble, filescript):
     #get filelist and check existed
     projectparser.listfile(filescript)
     #print(filescript)
-    for i in range(2, len(filescript)):
+    for i in range(1, len(filescript)):
         if not is_target_file(clist, assemble, filescript[i]):
             #clist.append(filescript[i])
         #else :
@@ -161,6 +224,7 @@ def check_target_files(clist, assemble, filescript):
 
 def autogen_makefile(buildscript, MakePara, clist, assemble):
     dependencies = '-include $(wildcard $(BUILD_DIR)/*.d)\n'
+    #check buildpara['BUILD_TO'] to get the generate path
     print("path:",buildscript[1], "is the build dir")
     if os.path.isdir(buildscript[1]):print("the dir:",buildscript[1], "is existed!")
     else:os.mkdir(buildscript[1])
@@ -239,61 +303,71 @@ def autogen_makefile(buildscript, MakePara, clist, assemble):
 
 #the function parse the system input
 def sysargv_parser(sysargv):
+    Para = {}
     if len(sysargv) < 2:
-        BuildPara['BUILD_TARGET'] = "all"
+        Para['BUILD_TARGET'] = "all"
+        Para['BUILD_TYPE'] = "debug"
+        #if no input cmd, then execute the default process: build all target
+        return Para
     else:
-        if syargv[1] == "-h" or sysargv[1] == "--help":
+        if sysargv[1] == "-h" or sysargv[1] == "--help":
             print("help info:")
             print(">python3 build.py targetname toolpath buildtype")
-        if syargv[1] == "-r" or sysargv[1] == "--remove":
+            return Para
+        elif sysargv[1] == "-r" or sysargv[1] == "--remove":
             print("remove build:")
             print("waiting for adding this feature in the next version.")
-        for i in rang(1, len(sysargv)):
-            if syargv[i] == "-h":
-                return
+            return Para
+        elif sysargv[1].startswith('-'):
+            print("Can not parse", sysargv[1])
+            print("waiting for adding this feature in the next version.")
+            return Para
+        else:
+            Para['BUILD_TARGET'] = sysargv[1]
+            for i in range(2, len(sysargv)):
+                if sysargv[i] == "debug" or sysargv[i] == "release":
+                    Para['BUILD_TYPE'] = sysargv[i]
+                elif sysargv[i].startswith('GCC_PATH='):
+                    Para['GCC_PATH'] = sysargv[i]
+            if not Para.__contains__('BUILD_TYPE'): Para['BUILD_TYPE'] = "debug"
+            return Para
 
 def main(argv):
-    buildscript = []
+    buildscript = ''
     files = []
     projscript = []
+    BuildPara = sysargv_parser(argv)
+    if not BuildPara.__contains__('BUILD_TARGET'): return
+    buildscript = BuildPara['BUILD_TARGET']
     print("*************************")
     print("\'", end="")
     print(argv[0], end="")
     print("\' is running to generate makefile for: ",end="")
-    if len(argv) < 2:
-        print("all")
-        buildscript.append('all')
-    else:
-        print(argv[1])
-        buildscript.append(argv[1])
+    print(BuildPara['BUILD_TARGET'], BuildPara['BUILD_TYPE'])
     print("*************************")
-    print("step 1: finding the projects space and target ......")
+    print("step 1: finding the build space and target projects ......")
 
-    Status = check_project(buildscript, files, projscript)
-    print("projects status:",Status)
-    proj_num = int((len(projscript) - 1) / 2)
-    print("find",proj_num,"projects:",projscript)
-    size_proj = 2
-    for i in range(0,proj_num):
+    #Status = check_project(buildscript, files, projscript)
+    BuildPara.update(check_project(buildscript))
+    print("find build para:", BuildPara)
+    projscript = BuildPara['PROJ_PATH'].split('&&')
+    print("projscript:", projscript)
+    for i in range(0, BuildPara['PROJ_NUM']):
         filescript = []
         makescript = []
-        n = (i * size_proj) + 1
-        m = (i * size_proj) + 2
-        filescript.append(os.path.join(projscript[m], files[0]))
-        filescript.append(projscript[0])
-        makescript.append(os.path.join(projscript[m], files[1]))
-        makescript.append(projscript[0])
+        filescript.append(os.path.join(projscript[i], BuildPara['GMEP']))
+        #filescript.append(projscript[0])
+        makescript.append(os.path.join(projscript[i], BuildPara['GMEP_']))
+        #makescript.append(projscript[0])
         #print(makescript)
         #print(files)
         print("parse project", (i + 1), filescript, makescript)
         clist = []
-        #inclist = []
         assemble = []
         MakePara = {}
         check_target_files(clist, assemble, filescript)
         print(clist, "\n", assemble)
         MakePara = projectparser.listpara(makescript)
-        #print(makescript)
         print(MakePara)
         print(buildscript)
         autogen_makefile(buildscript, MakePara, clist, assemble)

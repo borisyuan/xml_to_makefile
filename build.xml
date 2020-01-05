@@ -3,8 +3,8 @@
 	<buildSpace>mcu_projects</buildSpace>
 	<spacePath>../../../</spacePath>
 	<projectComment>GNU MCU Eclipse Project</projectComment>
-	<projects BuildGenerate='BUILD_SPACE_DEFAULT'>
-		<buildTarget>stm32f407_test</buildTarget>
-		<buildTarget>stm32f407_proj</buildTarget>
+	<projects BuildGenerate='BUILD_SPACE_DEFAULT/ouput' TargetPath='BUILD_SPACE_DEFAULT/ide/gnu-mcu-eclipse'>
+		<TargetName>stm32f407_test</TargetName>
+		<TargetName>stm32f407_proj</TargetName>
 	</projects>
 </buildDescription>

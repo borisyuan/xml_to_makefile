@@ -306,27 +306,31 @@ class BuildHandler(xml.sax.ContentHandler):
         self.CurrentData = tag
         if tag == "buildDescription":
             print ("buildDescription:")
+        elif self.CurrentData == "projects":
+            print("projects:")
+            if attributes.__contains__('BuildGenerate'):
+                print("Build generate path:",attributes['BuildGenerate'])
+                buildlist.append(attributes['BuildGenerate'])
+            if attributes.__contains__('TargetPath'):
+                print("Target path:", attributes['TargetPath'])
+                buildlist.append(attributes['TargetPath'])
     def endElement(self, tag):
         if self.CurrentData == "buildSpace":
             print ("buildSpace:", self.buildSpace)
-        if self.CurrentData == "spacePath":
+        elif self.CurrentData == "spacePath":
             print ("spacePath:", self.spacePath)
-        if self.CurrentData == "projectComment":
+        elif self.CurrentData == "projectComment":
             print ("projectComment:", self.projectComment)
-            if self.projectComment == "GNU MCU Eclipse Project" :
-                buildlist.append(self.spacePath)
-                buildlist.append(self.buildSpace)
-                buildlist.append(self.projectComment)
-            else :
-                print("Only support the GNU MCU Eclipse Project!")
-                print(self.projectComment, "parser is NOT ready now.")
+            buildlist.append(self.spacePath)
+            buildlist.append(self.buildSpace)
+            buildlist.append(self.projectComment)
         self.CurrentData = ""
     def characters(self, content):
         if self.CurrentData == "buildSpace":
             self.buildSpace = content
-        if self.CurrentData == "spacePath":
+        elif self.CurrentData == "spacePath":
             self.spacePath = content
-        if self.CurrentData == "projectComment":
+        elif self.CurrentData == "projectComment":
             self.projectComment = content
 def listbuild(build):
     parser = xml.sax.make_parser()
@@ -346,16 +350,17 @@ class TargetHandler(xml.sax.ContentHandler):
     def startElement(self, tag, attributes):
         self.CurrentData = tag
         if tag == "projects":
-            print ("find projects:")
-            print ("BuildGenerate:", attributes['BuildGenerate'])
-            targetlist.append(attributes['BuildGenerate'])
+            print ("Start to search projects:")
+            #print ("BuildGenerate:", attributes['BuildGenerate'])
+            #targetlist.append(attributes['BuildGenerate'])
+            #targetlist.append(tag)
     def endElement(self, tag):
-        if self.CurrentData == "buildTarget":
-            print ("buildTarget:", self.buildTarget)
+        if self.CurrentData == "TargetName":
+            print ("TargetName:", self.buildTarget)
             targetlist.append(self.buildTarget)
         self.CurrentData = ""
     def characters(self, content):
-        if self.CurrentData == "buildTarget":
+        if self.CurrentData == "TargetName":
             self.buildTarget = content
 def listproject(projects):
     parser = xml.sax.make_parser()
