@@ -169,9 +169,16 @@ def toolchainparser(tag, attributes):
                 if ParaDict.__contains__('TOOL_FLAGS'): ParaDict['TOOL_FLAGS'] += flag
                 else: ParaDict['TOOL_FLAGS'] = "TOOL_FLAGS = " + flag
             print(ParaDict['TOOL_FLAGS'])
+        elif attributes['name'].startswith('Other ') and attributes.__contains__('valueType') and attributes['valueType'] == 'string':
+            print("kkkkk string")
+            if ParaDict.__contains__('TOOL_FLAGS'): ParaDict['TOOL_FLAGS'] += attributes['value'] + ' '
+            else: ParaDict['TOOL_FLAGS'] = "TOOL_FLAGS = " + attributes['value']
 
 def buidsettinggenerate(tag, attributes):
     global ParaDict
+    global ParserStatus
+    global ToolchainParse
+    global ToolParse
     if ParserStatus == False:
         return
     if ToolParse == "NONE":
@@ -205,7 +212,7 @@ class MakeParaHandler(xml.sax.ContentHandler):
         if tag == "configuration" and attributes.__contains__('name'):
             if attributes['name'] == "Debug" :
                 ParserStatus = True
-                print(ToolParse, ParserStatus)
+                #print(ToolParse, ParserStatus)
                 #paralist.append(tag)
                 #paralist.append(attributes['name'])
             elif attributes['name'] == "Release":
@@ -216,18 +223,7 @@ class MakeParaHandler(xml.sax.ContentHandler):
             #paralist.append(attributes['name'])
         elif tag == "tool" and attributes.__contains__('name'):
             ToolParse = attributes['name']
-            print(ToolParse)
-        #if tag == "option":
-        #    if attributes.__contains__('name'):
-        #    #if attributes['name'] == "Include paths (-I)" or attributes == "Defined symbols (-D)":
-        #        paralist.append(attributes['name'])
-        #        print(attributes['name'])
-        #    if attributes.__contains__('value') and attributes.__contains__('valueType'):
-        #        paralist.append(attributes['valueType'])
-        #        paralist.append(attributes['value'])
-        #if tag == "listOptionValue" and attributes.__contains__('value'):
-        #    #print(attributes['value'])
-        #    paralist.append(attributes['value'])
+            #print(ToolParse)
 
     def endElement(self, tag):
         self.CurrentData = ""
@@ -252,7 +248,7 @@ def listpara(parascript):
     parser.setContentHandler(Handler)
     parser.parse(parascript[0])
     parascript.extend(paralist)
-    print(ParaDict.values())
+    #print(ParaDict.values())
     return ParaDict
 
 
