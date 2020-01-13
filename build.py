@@ -153,7 +153,8 @@ def check_project(buildscript):
     SearchCounter = 0
     for i in range(0, BuildParaDict['PROJ_NUM']):
         if BuildParaDict.__contains__('PROJ_PATH'): 
-            SearchPath = BuildParaDict['PROJ_PATH']
+            #SearchPath = BuildParaDict['PROJ_PATH']
+            SearchPath = TargetPath
         else:
             SearchPath = abs_path
         projpath = search_target(SearchPath, projects[i])
@@ -174,6 +175,7 @@ def check_project(buildscript):
                         else:BuildParaDict['PROJ_PATH'] = path
                     else:
                         BuildParaDict['PROJ_PATH'] = path
+            projpath.clear()
     BuildParaDict['PROJ_NUM'] = SearchCounter
     print(BuildParaDict['PROJ_NAME'],BuildParaDict['PROJ_PATH']) 
     return BuildParaDict 
@@ -184,8 +186,10 @@ def is_target_file(clist, assemble, filename):
         #print(filetype)
         if filetype[1] == ".S" or filetype[1] == ".s":
             assemble.append(filename)
-        else :
+        elif filetype[1] == ".c":
             clist.append(filename)
+        else :
+            return False
         return True
     else: return False
 
@@ -293,7 +297,7 @@ def autogen_makefile(buildpara, MakePara, clist, assemble):
     fd.write("OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(AS_SOURCES:.S=.o)))\nvpath %.S $(sort $(dir $(AS_SOURCES)))\n\n")
     fd.write("$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) \n\t$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@\n\n")
     fd.write("$(BUILD_DIR)/%.o: %.S Makefile | $(BUILD_DIR)\n\t$(AS) -c $(CFLAGS) $< -o $@\n\n")
-    fd.write("$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile\n\t$(CC) $(OBJECTS) $(LDFLAGS) -o $@\n\t$(SZ) $@\n\n")
+    fd.write("$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile\n\t$(CC) $(CLFAGS) $(OBJECTS) $(LDFLAGS) -o $@\n\t$(SZ) $@\n\n")
     fd.write("$(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)\n\t$(HEX) $< $@\n\n")
     fd.write("$(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)\n\t$(BIN) $< $@\n\n")
     fd.write("$(BUILD_DIR):\n\tmkdir $@\n\n")
@@ -334,6 +338,15 @@ def sysargv_parser(sysargv):
             if not Para.__contains__('BUILD_TYPE'): Para['BUILD_TYPE'] = "debug"
             return Para
 
+def make_target(buildpara, makepara):
+    targetdir = makepara['TARGET'].replace('TARGET = ','')
+    targetpath = os.path.join(buildpara['BUILD_TO'], targetdir)
+    if os.path.isdir(targetpath):
+        print("Jump to the target dir:",targetpath, "and run make cmd!")
+        os.chdir(targetpath)
+        os.system('make')
+    else:print("the target dir:",targetpath, "is not existed!")
+
 def main(argv):
     buildscript = ''
     files = []
@@ -373,6 +386,12 @@ def main(argv):
         print(MakePara)
         print(buildscript)
         autogen_makefile(BuildPara, MakePara, clist, assemble)
+        make_target(BuildPara, MakePara)
+        filescript.clear()
+        makescript.clear()
+        clist.clear()
+        assemble.clear()
+        MakePara.clear()
 
 
 if __name__ == '__main__':

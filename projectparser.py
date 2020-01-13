@@ -22,8 +22,8 @@ def toollinkerparser(tag, attributes):
             if ParaDict.__contains__('LDFLAGS'):
                 ParaDict['LDFLAGS'] += flag
             else:
-                ParaDict['LDFLAGS'] = "LDFLAGS = $(MCU) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map " + flag
-        print(ParaDict['LDFLAGS'])
+                ParaDict['LDFLAGS'] = "LDFLAGS = -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map " + flag
+            print(ParaDict['LDFLAGS'])
     elif tag == "listOptionValue" and attributes.__contains__('value'):
         if os.path.isfile(attributes['value']):
             ParaDict['LDSCRIPT'] += attributes['value']
@@ -77,11 +77,12 @@ def toolcompilerparser(tag, attributes):
         if ListOption == 'C_DEFS':
             Defs = " \\\n -D" + attributes['value']
             ParaDict['C_DEFS'] += Defs
-            print(ParaDict['C_DEFS'])
+            print("+ define symble:", attributes['value'])
+            #print(ParaDict['C_DEFS'])
         elif ListOption == 'C_INCLUDES':
             Icludes = " \\\n -I" + comfirm_includes(attributes['value'])
             ParaDict['C_INCLUDES'] += Icludes
-            print(ParaDict['C_INCLUDES'])
+            #print(ParaDict['C_INCLUDES'])
 
 def toolassemblerparser(tag, attributes):
     global ParaDict
@@ -137,8 +138,8 @@ def toolchainparser(tag, attributes):
             #print("PREFIX =",attributes['value'])
             ParaDict['CC'] = "CC = $(PREFIX)" + attributes['value']
             ParaDict['AS'] = "AS = $(PREFIX)" + attributes['value'] + " -x assembler-with-cpp"
-            ParaDict['ASFLAGS'] = "ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) $(TOOL_FLAGS) "
-            ParaDict['CFLAGS'] = "CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) $(TOOL_FLAGS) "
+            ParaDict['ASFLAGS'] = "ASFLAGS = $(MCU) $(OPT) $(TOOL_FLAGS) $(AS_DEFS) $(AS_INCLUDES) "
+            ParaDict['CFLAGS'] = "CFLAGS = $(MCU) $(OPT) $(TOOL_FLAGS) $(C_DEFS) $(C_INCLUDES) "
             print(ParaDict['CC'])
             print(ParaDict['AS'])
         elif attributes['name'] == "Hex/Bin converter":
@@ -170,7 +171,6 @@ def toolchainparser(tag, attributes):
                 else: ParaDict['TOOL_FLAGS'] = "TOOL_FLAGS = " + flag
             print(ParaDict['TOOL_FLAGS'])
         elif attributes['name'].startswith('Other ') and attributes.__contains__('valueType') and attributes['valueType'] == 'string':
-            print("kkkkk string")
             if ParaDict.__contains__('TOOL_FLAGS'): ParaDict['TOOL_FLAGS'] += attributes['value'] + ' '
             else: ParaDict['TOOL_FLAGS'] = "TOOL_FLAGS = " + attributes['value']
 
@@ -235,10 +235,21 @@ class MakeParaHandler(xml.sax.ContentHandler):
 def listpara(parascript):
     global ProjDir
     global ParaDict
+    global ParserStatus
+    global ToolchainParse
+    global ToolParse
+
+    ParserStatus = False
+    ToolchainParse = False
+    ToolParse = 'NONE'
+    ProjDir = ''
+    ListOption = ''
+    ParaDict.clear()
     ProjDir = os.path.dirname(parascript[0])
     print("Project Dir:", ProjDir)
     temp = os.path.split(ProjDir)
     ParaDict['TARGET'] = "TARGET = " + temp[1]
+    ParaDict['LDFLAGS'] = "LDFLAGS = -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map "
     print(ParaDict['TARGET'])
     parser = xml.sax.make_parser()
     parser.setFeature(xml.sax.handler.feature_namespaces, 0)
