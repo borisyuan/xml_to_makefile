@@ -1,4 +1,7 @@
+#ignore the following file:
 *.swp
+*.*~
+tags
 build/
 testAPI/
 __pycache__/

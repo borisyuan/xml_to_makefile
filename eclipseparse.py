@@ -79,6 +79,7 @@ def source_parse(projdir):
     Handler = SourceHandler(projdir)
     parser.setContentHandler(Handler)
     parser.parse(projxml)
+    print(Handler.sourcelist)
     return Handler.sourcelist
 
 # parse the .cproject and get build para
@@ -95,6 +96,7 @@ def linker_para_parse(paradict, tag, attributes):
                 paradict['LDFLAGS'] = "LDFLAGS = -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map " + flag
             print(paradict['LDFLAGS'])
     elif tag == "listOptionValue" and attributes.__contains__('value'):
+        print(attributes['value'])
         if os.path.isfile(attributes['value']):
             paradict['LDSCRIPT'] += attributes['value']
         else:
@@ -109,7 +111,7 @@ def linker_para_parse(paradict, tag, attributes):
                     paradict['LDSCRIPT'] += ldscript
                 else:
                     print("can not find ldscript file!\n path :", attributes['value'])
-        print(paradict['LDSCRIPT'])
+        #print(paradict['LDSCRIPT'])
 
 def comfirm_includes(projdir, includes):
     print(includes)

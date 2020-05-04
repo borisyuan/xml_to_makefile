@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomConfig>
+	<ProjName>mcu_projects</ProjName>
+	<ProjPath>../../../</ProjPath>
+	<ProjectParser>GNU MCU Eclipse Project</ProjectParser>
+	<ProjectScript BuildRule='only build sub module' BuildPath='${ProjDir}/output' SubModulePath='${ProjDir}/ide/gnu-mcu-eclipse'>
+		<SubModule>stm32f407_test</SubModule>
+		<SubModule>stm32f407_proj</SubModule>
+	</ProjectScript>
+	<ToolScript GccPath='home/boris/workspace/toolchain/gnu-mcu-gcc-8.2.1-1.7/bin'></ToolScript>
+</CustomConfig>
