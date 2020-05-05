@@ -1,1 +1,5 @@
-This is a makefile autogenerating
+This is a script for mcu project automake
+1, custom_cfg.xml for custom build config setting
+2, custom_cfg.py is a parser for custom_cfg.xml
+3, eclipseparse.py is a parser for gnu mcu eclipse project xml file
+4, custom_make.py can autogen Makefile for the project target, and run make cmd
