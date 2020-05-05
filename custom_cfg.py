@@ -119,10 +119,17 @@ class BuildInfo(object):
             elif Handler.buildinfo['BuildPath'].startswith('${ProjDir}'):
                 buildpath = os.path.join(self.info['ProjDir'], Handler.buildinfo['BuildPath'].replace('${ProjDir}/', ''))
                 self.info['BuildPath'] = os.path.abspath(buildpath)
-        if Handler.buildinfo.__contains__('GccPath'):
-            if os.path.isdir(Handler.buildinfo['GccPath']) and not self.info.__contains__('GCC_PATH'):
-                self.info['GCC_PATH'] = Handler.buildinfo['GccPath']
+        if self.info.__contains__('GCC_PATH'):
+            gccpath = self.info['GCC_PATH'].replace('GCC_PATH=', '')
+        else:
+            gccpath = ''
+        if Handler.buildinfo.__contains__('GccPath') and not os.path.isdir(gccpath):
+            if os.path.isdir(Handler.buildinfo['GccPath']):
+                #if self.info.__contains__('GCC_PATH') and not os.path.isdir(self.info['GCC_PATH']):
+                self.info['GCC_PATH'] = 'GCC_PATH=' + Handler.buildinfo['GccPath']
                 print("set default gcc path:", self.info['GCC_PATH'])
+            else:
+                print("can not find gcc path:", Handler.buildinfo['GccPath'])
         if Handler.buildinfo.__contains__('ProjectParser'):
             if Handler.buildinfo['ProjectParser'] == 'GNU MCU Eclipse Project':
                 self.info['ProjParser'] = 'eclipseparser'

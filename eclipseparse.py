@@ -79,7 +79,7 @@ def source_parse(projdir):
     Handler = SourceHandler(projdir)
     parser.setContentHandler(Handler)
     parser.parse(projxml)
-    print(Handler.sourcelist)
+    #print(Handler.sourcelist)
     return Handler.sourcelist
 
 # parse the .cproject and get build para
@@ -243,10 +243,12 @@ def tool_para_parse(paradict, tag, attributes):
             else:
                 if paradict.__contains__('TOOL_FLAGS'): paradict['TOOL_FLAGS'] += flag
                 else: paradict['TOOL_FLAGS'] = "TOOL_FLAGS = " + flag
-            print(paradict['TOOL_FLAGS'])
+                print("TOOL_FLAGS +", flag)
+            #print(paradict['TOOL_FLAGS'])
         elif attributes['name'].startswith('Other ') and attributes.__contains__('valueType') and attributes['valueType'] == 'string':
             if paradict.__contains__('TOOL_FLAGS'): paradict['TOOL_FLAGS'] += attributes['value'] + ' '
             else: paradict['TOOL_FLAGS'] = "TOOL_FLAGS = " + attributes['value']
+            print("TOOL_FLAGS +", attributes['value'])
 
 def build_para(status, paradict, tag, attributes):
     if status['parsestart'] == False:
@@ -282,14 +284,10 @@ class ParaHandler(xml.sax.ContentHandler):
             if attributes['name'] == "Debug" :
                 self.status['parsestart'] = True
                 #print(status['toolname'], status['parsestart'])
-                #paralist.append(tag)
-                #paralist.append(attributes['name'])
             elif attributes['name'] == "Release":
                 self.status['parsestart'] = False
         elif tag == "toolChain" and attributes.__contains__('name'):
             self.status['parsetool'] = True
-            #paralist.append(tag)
-            #paralist.append(attributes['name'])
         elif tag == "tool" and attributes.__contains__('name'):
             self.status['toolname'] = attributes['name']
             #print(status['toolname'])
@@ -319,7 +317,7 @@ def para_parse(projdir):
     print(Handler.paradict['TARGET'])
     parser.setContentHandler(Handler)
     parser.parse(projxml)
-    print(Handler.paradict)
+    #print(Handler.paradict)
     return Handler.paradict
 
 if __name__ == '__main__':

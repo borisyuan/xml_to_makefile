@@ -17,7 +17,7 @@ class ProjParse(object):
             return []
         if self.info['ProjParser'] == 'eclipseparser':
             self.sourcelist = eclipseparse.source_parse(self.info['TargetDir'])
-        print(self.sourcelist)
+        #print(self.sourcelist)
         return self.sourcelist
 
     def target_para(self):
@@ -26,7 +26,7 @@ class ProjParse(object):
             return {}
         if self.info['ProjParser'] == 'eclipseparser':
             self.paradict = eclipseparse.para_parse(self.info['TargetDir'])
-        print(self.paradict)
+        #print(self.paradict)
         return self.paradict
 
 if __name__ == '__main__':

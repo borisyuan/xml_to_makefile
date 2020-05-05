@@ -10,11 +10,11 @@ class AutoMake(object):
     #def __init__(self, custom, source, para):
         #self.custom = custom
         self.custom = parser.info
-        self.c_source = "C_SOURCE = "
-        self.as_source = "AS_SOURCE = "
-        self.cpp_source = "CPP_SOURCE = "
-        self.para = parser.target_para()
+        self.c_source = "C_SOURCES = "
+        self.as_source = "AS_SOURCES = "
+        self.cpp_source = "CPP_SOURCES = "
         source = parser.target_source()
+        self.para = parser.target_para()
         if len(source) < 1:
             print("The list of source file is None!")
         #print(source)
@@ -118,26 +118,5 @@ class AutoMake(object):
             print("the target dir:",self.para['MakefileDir'], "is not existed!")
             return 0x000f
 
-def test(para):
-    test = AutoMake(para)
-    #test.c_source += "no file find!\n"
-    print(test.c_source)
-    print(test.default)
-    flist = []
-    flist.append("a.c")
-    flist.append("b.c")
-    flist.append("c.s")
-    test.sourcefile(flist)
-    print(test.c_source)
-    test.autogen("abc")
-
-def main(argv):
-    print(argv[0])
-    cwd = os.path.split(argv[0])[0]
-    print(cwd)
-    tick = time.time()
-    para = time.strftime("%Y-%m-%d,%H:%M", time.gmtime())
-    test(para)
-
 if __name__ == '__main__':
-    main(sys.argv)
+    print("this file is an automake script.", time.strftime("%Y-%m-%d,%H:%M", time.gmtime()))
